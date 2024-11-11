@@ -1,5 +1,5 @@
-import streamlit as st
 import pandas as pd
+import streamlit as st
 
 # 行数超过指定条目后提示，可能加载过慢
 MAX_ROWS_TO_DISPLAY = 10000
@@ -28,14 +28,19 @@ if uploaded_file is not None:
         sort_order = st.radio("选择排序顺序", ["升序", "降序"])
         sorted_df = df.sort_values(by=sort_option, ascending=(sort_order == "升序"))
         # 分数区间过滤
-        min_score, max_score = st.slider("选择分数区间", float(df[sort_option].min()), float(df[sort_option].max()), (float(df[sort_option].min()), float(df[sort_option].max())))
+        min_score, max_score = st.slider(
+            "选择分数区间",
+            float(df[sort_option].min()),
+            float(df[sort_option].max()),
+            (float(df[sort_option].min()), float(df[sort_option].max())),
+        )
         filtered_df = sorted_df[(sorted_df[sort_option] >= min_score) & (sorted_df[sort_option] <= max_score)]
         st.write(f"过滤结果：已筛选出 {len(filtered_df)} 行")
         st.dataframe(filtered_df)
-        #指定行号查询
+        # 指定行号查询
         with st.container():
             st.write("指定行信息查询")
-            row_index = st.number_input("输入行号",min_value=0, max_value=len(df) - 1, step=1)
+            row_index = st.number_input("输入行号", min_value=0, max_value=len(df) - 1, step=1)
             # 检查输入
             if row_index < 0 or row_index >= len(df):
                 st.warning(f"行号应在 0 到 {len(df) - 1} 之间")
