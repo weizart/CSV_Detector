@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 import streamlit as st
 
@@ -5,11 +7,24 @@ import streamlit as st
 MAX_ROWS_TO_DISPLAY = 10000
 
 st.title("CSV查询器")
-uploaded_file = st.file_uploader("选择需要解析的CSV文件", type="csv")
+# uploaded_file = st.file_uploader("选择需要解析的CSV文件", type="csv")
 
-if uploaded_file is not None:
-    # 调用系统窗口选择需要读取的CSV文件
-    df = pd.read_csv(uploaded_file)
+upload_option = st.radio("选择CSV文件上传方式", ["系统选框上传", "输入路径"])
+
+# 根据选择的上传方式加载文件
+if upload_option == "系统选框上传":
+    uploaded_file = st.file_uploader("请选择需要解析的CSV文件", type="csv")
+    if uploaded_file is not None:
+        df = pd.read_csv(uploaded_file)
+else:
+    file_path = st.text_input("请输入CSV文件的路径")
+    if file_path and os.path.exists(file_path):
+        df = pd.read_csv(file_path)
+    elif file_path:
+        st.error("路径无效或文件不存在，请检查路径。")
+
+if "df" in locals():
+    # df = pd.read_csv(uploaded_file)
     # 判断文件大小
     if len(df) <= MAX_ROWS_TO_DISPLAY:
         st.write("CSV文件加载成功，数据表预览如下：")
@@ -17,7 +32,6 @@ if uploaded_file is not None:
     else:
         st.write(f"文件行数超过{MAX_ROWS_TO_DISPLAY}行，加载速度可能变慢")
         st.dataframe(df)
-
     # 动态生成可用的排序选项
     available_sort_columns = [col for col in ["score_aes", "score_flow", "score_pref"] if col in df.columns]
     if not available_sort_columns:
@@ -47,11 +61,21 @@ if uploaded_file is not None:
                 row_index = None
             query_button = st.button("查询")
 
-            # 查询结果显示
-            if query_button:
-                selected_row = df.iloc[int(row_index)]
-                st.write("查询结果：")
-                st.write(f"path: {selected_row['path']}")
-                st.write(f"text: {selected_row['text']}")
-                st.write(f"宽高: {selected_row['width']}x{selected_row['height']}")
-                st.write(f"fps: {selected_row['fps']}")
+            # 查询结果展示
+            if query_button and row_index is not None:
+                selected_row = df.iloc[row_index]
+                video_path = selected_row["path"]
+                if os.path.exists(video_path):
+                    st.video(video_path)
+                else:
+                    st.error("路径错误或视频文件不存在，请检查路径是否正确。")
+                # 展示attributes json
+                result = {
+                    "path": selected_row["path"],
+                    "text": selected_row["text"],
+                    "width": int(selected_row["width"]),
+                    "height": int(selected_row["height"]),
+                    "fps": float(selected_row["fps"]),
+                }
+                st.write("JSON Form:")
+                st.json(result)
